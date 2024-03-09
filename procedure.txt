@@ -1,0 +1,65 @@
+CREATE PROCEDURE StokEkstreGetir(
+    @MalKodu varchar(30),
+    @BaslangicTarih int,
+    @BitisTarih int
+)
+AS
+BEGIN   
+    SET NOCOUNT ON
+    SELECT
+        row_number() OVER (ORDER BY STI.Tarih ASC) AS SiraNo,
+        CASE
+            WHEN STI.IslemTur = 0 THEN 'Giriş'
+            ELSE 'Çıkış'
+        END AS IslemTur,
+        STI.EvrakNo, 
+        CONVERT(VARCHAR(15), CAST(STI.Tarih - 2 AS datetime), 104) AS Tarih,
+        CASE
+            WHEN STI.IslemTur = 0 THEN STI.Miktar
+            ELSE 0
+        END AS GirisMiktar,
+        CASE
+            WHEN STI.IslemTur = 1 THEN STI.Miktar
+            ELSE 0
+        END AS CikisMiktar,
+        CAST(0 AS NUMERIC(10, 2)) AS Stok
+    INTO #TempTable
+    FROM STI 
+    WHERE STI.MalKodu = @MalKodu AND STI.Tarih BETWEEN @BaslangicTarih AND @BitisTarih
+    ORDER BY STI.Tarih
+
+    -- cursor icin gerekli parametreler tanimlama
+    DECLARE @siraNo bigint
+    DECLARE @islemTur smallint
+    DECLARE @miktar numeric
+    DECLARE stokCursor CURSOR
+    FOR
+    SELECT
+            row_number() OVER (ORDER BY STI.Tarih ASC) AS SiraNo,
+            STI.IslemTur AS IslemTur,
+            STI.Miktar AS Miktar
+    FROM STI 
+    WHERE STI.MalKodu = @MalKodu AND STI.Tarih BETWEEN @BaslangicTarih AND @BitisTarih
+    ORDER BY STI.Tarih
+    OPEN stokCursor
+    FETCH NEXT FROM stokCursor INTO @siraNo, @islemTur, @miktar
+    DECLARE @stokMiktar AS numeric=0
+    WHILE @@FETCH_STATUS=0
+    BEGIN   
+       IF(@islemTur=0)
+       BEGIN
+            SET @stokMiktar = @stokMiktar + @miktar
+       END    
+       ELSE
+       BEGIN
+            SET @stokMiktar = @stokMiktar - @miktar
+       END
+       UPDATE #TempTable SET Stok = @stokMiktar WHERE SiraNo = @siraNo
+       FETCH NEXT FROM stokCursor INTO @siraNo, @islemTur, @miktar
+    END
+    CLOSE stokCursor
+    DEALLOCATE stokCursor
+
+    -- temptable listelenir
+    SELECT * FROM #TempTable
+END
