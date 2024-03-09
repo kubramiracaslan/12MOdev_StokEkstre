@@ -96,6 +96,7 @@
             btnStokEkstreGetir.TabIndex = 8;
             btnStokEkstreGetir.Text = "Stok Ekstre Getir";
             btnStokEkstreGetir.UseVisualStyleBackColor = true;
+            btnStokEkstreGetir.Click += btnStokEkstreGetir_Click;
             // 
             // comboMalAd
             // 
