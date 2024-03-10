@@ -5,7 +5,7 @@ namespace Odev
 {
     public partial class MainForm : Form
     {
-        // Baðlantý dizesi tanýmlanmasý
+        // Baðlantý dizesinin tanýmlanmasý
         private const string CONNECTION_STRING = @"Server=(local)\SQLEXPRESS;Database=Test;Trusted_Connection=True;";
         public MainForm()
         {
